@@ -45,7 +45,14 @@ def hubs_to_category(text):
         for one in listing:
             one_list.append(one['hubName'].strip())
         listed.append(one_list)
-    return listed
+    trans = pd.DataFrame({'list': listed})
+    value = pd.DataFrame(
+        {'unique': trans.apply(lambda x: pd.Series(x['list']), axis=1).stack().reset_index(level=1, drop=True)})
+    unique = []
+    for val in value.value_counts()[:400].keys():
+        unique.append(val[0])
+    mlb = MultiLabelBinarizer(sparse_output=False, classes=unique)
+    return list(mlb.fit_transform(listed))
 
 
 def tags_to_category(text):
@@ -55,30 +62,37 @@ def tags_to_category(text):
         for one in listing:
             one_list.append(one['tagName'].strip())
         listed.append(one_list)
-    return listed
+    trans = pd.DataFrame({'list': listed})
+    value = pd.DataFrame(
+        {'unique': trans.apply(lambda x: pd.Series(x['list']), axis=1).stack().reset_index(level=1, drop=True)})
+    unique = []
+    for val in value.value_counts()[:400].keys():
+        unique.append(val[0])
+    mlb = MultiLabelBinarizer(sparse_output=False, classes=unique)
+    return list(mlb.fit_transform(listed))
 
 
 import pandas as pd
+import numpy as np
 
 
 Habr = pd.read_json('habr.json')
-Habr = Habr[:100]
+Habr = Habr[:50]
 del[Habr['articleLink'], Habr['author']]
-Habr['text'] = clean_text(Habr['text'])
-Habr['title'] = clean_text(Habr['title'])
-Habr['publicationTime'] = date_to_num(Habr['publicationTime'])
-Habr['hubs'] = hubs_to_category(Habr['hubs'])
-Habr['tags'] = tags_to_category(Habr['tags'])
-MLB_hubs = MultiLabelBinarizer(sparse_output=False)
-x = MLB_hubs.fit_transform(Habr['hubs'])
-Habr['hubs'] = x
-print(Habr['hubs'])
 
-# import numpy as np
-# from sklearn.decomposition import PCA
-# from sklearn.feature_extraction.text import TfidfVectorizer
+
+Habr['text'] = clean_text(Habr['text'])
+# Habr['title'] = clean_text(Habr['title'])
+# Habr['publicationTime'] = date_to_num(Habr['publicationTime'])
+# Habr['hubs'] = hubs_to_category(Habr['hubs'])
+# Habr['tags'] = tags_to_category(Habr['tags'])
+print(Habr['text'][0])
+
+
 # from sklearn.preprocessing import StandardScaler
 # from sklearn.model_selection import train_test_split
+# from sklearn.feature_extraction.text import TfidfVectorizer
+# from sklearn.decomposition import PCA
 #
 #
 # x_train, x_test, y_train, y_test = train_test_split(np.hstack(Habr['text']), Habr['claps'], test_size=0.3)
@@ -127,7 +141,6 @@ print(Habr['hubs'])
 #
 #
 # from sklearn.ensemble import GradientBoostingRegressor
-# from sklearn.pipeline import make_pipeline
 #
 #
 # clf = make_pipeline(StandardScaler, GradientBoostingRegressor())
